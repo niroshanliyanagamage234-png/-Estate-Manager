@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Sprout, ClipboardList, Wallet, Factory, Plus, Save, Trash2, 
-  ArrowLeft, CreditCard, AlertTriangle, FileText, CheckCircle, Printer, Calendar as CalendarIcon 
+  ArrowLeft, CreditCard, AlertTriangle, FileText, CheckCircle, Printer 
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, serverTimestamp, setDoc 
 } from 'firebase/firestore';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // --- Firebase Configuration ---
 // වැදගත්: මෙතනට ඔබේ Firebase Project එකේ Config ටික පේස්ට් කරන්න.
-// (Important: Paste your Firebase Config here)
 const firebaseConfig = {
   apiKey: "AIzaSyAOA8FblPLzOWDEswPipXfzqIuvWY6ZUvA",
   authDomain: "tea-estate-app.firebaseapp.com",
@@ -22,18 +21,10 @@ const firebaseConfig = {
 
   // apiKey: "AIzaSy...",
   // authDomain: "your-project.firebaseapp.com",
-  // projectId: "your-project",
-  // storageBucket: "your-project.appspot.com",
-  // messagingSenderId: "...",
-  // appId: "..."
+  // ...
 };
 
-// Config එක දාලා නැත්නම් Error එකක් පෙන්වීම සඳහා
-if (!firebaseConfig.apiKey) {
-  console.error("Please replace the firebaseConfig object with your actual keys in App.js!");
-}
-
-// Initialize Firebase only if config is present (to avoid crashes before config)
+// Initialize Firebase
 const app = firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null;
 const auth = app ? getAuth(app) : null;
 const db = app ? getFirestore(app) : null;
@@ -266,4 +257,188 @@ const WorkersTab = ({ workers, deleteWorker, addWorker, onSelectWorker }) => {
         {workers.map(worker => (
           <div key={worker.id} onClick={() => onSelectWorker(worker)} className="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 flex justify-between items-center cursor-pointer hover:bg-green-50">
             <div><h3 className="font-bold text-gray-800 text-lg">{worker.name}</h3><p className="text-sm text-gray-500">{worker.category}</p></div>
-            <button onClick={(e) => { e.stopPropagation(); setDeleteId(worker.id);
+            <button onClick={(e) => { e.stopPropagation(); setDeleteId(worker.id); }} className="text-red-400 p-2"><Trash2 size={18} /></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- Daily Log Tab ---
+const DailyLogTab = ({ workers, entries, addEntry, date, setDate }) => {
+  const [inputs, setInputs] = useState({});
+  const dailyTotalKg = useMemo(() => entries.filter(e => e.date === date).reduce((sum, e) => sum + parseFloat(e.value || 0), 0), [entries, date]);
+  const handleSave = (worker) => { const val = inputs[worker.id]; if (!val) return; addEntry({ workerId: worker.id, workerName: worker.name, date: date, type: 'kg', value: parseFloat(val), timestamp: serverTimestamp() }); setInputs(prev => ({...prev, [worker.id]: ''})); };
+  const getExistingEntry = (workerId) => entries.find(e => e.workerId === workerId && e.date === date);
+
+  return (
+    <div className="p-4 space-y-4">
+      <div className="bg-green-700 text-white p-4 rounded-xl shadow-lg mb-4 flex justify-between items-end">
+        <div><p className="text-green-100 text-sm">අද එකතුව (Kg)</p><h1 className="text-4xl font-bold">{dailyTotalKg.toFixed(2)}</h1></div>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-green-800 text-white border border-green-600 rounded p-1" />
+      </div>
+      <div className="space-y-3">
+        {workers.map(worker => {
+          const existing = getExistingEntry(worker.id);
+          return (
+            <div key={worker.id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex-1"><p className="font-semibold text-gray-800">{worker.name}</p><span className="text-xs text-gray-500 bg-gray-100 px-2 rounded">{worker.category}</span></div>
+              <div className="flex items-center gap-2">
+                {existing ? <div className="bg-green-50 text-green-700 px-3 py-1 rounded-lg font-bold border border-green-200">{existing.value} Kg ✅</div> : 
+                <div className="flex gap-2"><input type="number" placeholder="Kg" className="w-20 p-2 border rounded-lg text-right" value={inputs[worker.id] || ''} onChange={(e) => setInputs(prev => ({...prev, [worker.id]: e.target.value}))} /><button onClick={() => handleSave(worker)} className="bg-green-600 text-white p-2 rounded-lg"><Save size={18} /></button></div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// --- Factory Tab ---
+const FactoryTab = ({ factoryRecords, addFactoryRecord, deleteFactoryRecord, bookNumbers, addBookNumber, deleteBookNumber }) => {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookNo, setBookNo] = useState('');
+  const [weight, setWeight] = useState('');
+  const [newBookName, setNewBookName] = useState('');
+  const [showBookManager, setShowBookManager] = useState(false);
+
+  useEffect(() => { if (bookNumbers.length > 0 && !bookNo) setBookNo(bookNumbers[0].name); }, [bookNumbers]);
+  const handleSave = (e) => { e.preventDefault(); if (!weight || !bookNo) return; addFactoryRecord({ date, bookNo, weight: parseFloat(weight) }); setWeight(''); };
+  const handleAddBook = (e) => { e.preventDefault(); if(!newBookName) return; addBookNumber(newBookName); setNewBookName(''); };
+  const summary = useMemo(() => { const sums = {}; factoryRecords.forEach(r => { sums[r.bookNo] = (sums[r.bookNo] || 0) + r.weight; }); return sums; }, [factoryRecords]);
+
+  return (
+    <div className="p-4 space-y-6">
+      <div className="flex justify-between items-center"><h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Factory className="text-orange-500" /> ෆැක්ටරි</h2><button onClick={() => setShowBookManager(!showBookManager)} className="text-xs bg-gray-200 px-3 py-1 rounded">පොත් සැකසුම්</button></div>
+      {showBookManager && (
+         <div className="bg-gray-100 p-3 rounded-lg border border-gray-300"><form onSubmit={handleAddBook} className="flex gap-2 mb-3"><input type="text" placeholder="පොත් නම (උදා: Book A)" value={newBookName} onChange={e => setNewBookName(e.target.value)} className="flex-1 p-2 border rounded text-sm" /><button type="submit" className="bg-orange-500 text-white px-3 rounded text-sm">Add</button></form><div className="flex flex-wrap gap-2">{bookNumbers.map(book => (<span key={book.id} className="bg-white border border-gray-300 px-2 py-1 rounded text-xs flex items-center gap-2">{book.name}<button onClick={() => deleteBookNumber(book.id)} className="text-red-400">x</button></span>))}</div></div>
+      )}
+      <div className="bg-white p-4 rounded-xl shadow-md border-t-4 border-orange-500">
+        <form onSubmit={handleSave} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs text-gray-500">දිනය</label><input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 border rounded" /></div>
+            <div><label className="text-xs text-gray-500">පොත</label>{bookNumbers.length > 0 ? <select value={bookNo} onChange={e => setBookNo(e.target.value)} className="w-full p-2 border rounded">{bookNumbers.map(n => <option key={n.id} value={n.name}>{n.name}</option>)}</select> : <div className="text-red-500 text-xs">පොත් අංකයක් සාදන්න.</div>}</div>
+          </div>
+          <div><label className="text-xs text-gray-500">බර (Kg)</label><input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="w-full p-2 border rounded" /></div>
+          <button type="submit" disabled={bookNumbers.length === 0} className="w-full bg-orange-500 text-white py-2 rounded font-semibold">ඇතුලත් කරන්න</button>
+        </form>
+      </div>
+      <div><h3 className="font-bold text-gray-700 mb-2">මුළු එකතුව (Total)</h3><div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{Object.entries(summary).map(([book, total]) => (<div key={book} className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-center"><div className="text-xs text-orange-600 font-bold uppercase">{book}</div><div className="text-xl font-bold text-gray-800">{total.toFixed(1)}</div></div>))}</div></div>
+    </div>
+  );
+};
+
+// --- Payroll Tab ---
+const PayrollTab = ({ workers, entries, advances, earnings, payments, onSelectWorker }) => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const payrollData = useMemo(() => {
+    return workers.map(worker => {
+      const workerEntries = entries.filter(e => e.workerId === worker.id && e.date.startsWith(selectedMonth));
+      const workerAdvances = advances.filter(a => a.workerId === worker.id && a.date.startsWith(selectedMonth));
+      const workerPayments = payments.filter(p => p.workerId === worker.id && p.date.startsWith(selectedMonth));
+      const workerMonthlyEarningsRecs = earnings.filter(e => { if (e.workerId !== worker.id) return false; if (e.date && e.date.startsWith(selectedMonth)) return true; if (e.month === selectedMonth) return true; return false; });
+      const grossPay = workerMonthlyEarningsRecs.reduce((sum, r) => sum + r.amount, 0);
+      let totalKg = 0; workerEntries.forEach(e => totalKg += parseFloat(e.value || 0));
+      const totalAdvances = workerAdvances.reduce((sum, a) => sum + a.amount, 0);
+      const totalPaid = workerPayments.reduce((sum, p) => sum + p.amount, 0);
+      return { ...worker, totalKg, grossPay, totalAdvances, totalPaid, balanceDue: grossPay - totalAdvances - totalPaid };
+    });
+  }, [workers, entries, advances, payments, selectedMonth, earnings]);
+
+  return (
+    <div className="p-4 space-y-6 print:p-0">
+      <div className="bg-white p-4 rounded-xl shadow flex justify-between items-center print:hidden">
+          <div><label className="text-xs text-gray-500 block">වාර්තා මාසය</label><input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="p-2 border rounded font-bold" /></div>
+          <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex gap-2"><Printer size={18} /> Report</button>
+      </div>
+      <div className="overflow-x-auto print:overflow-visible">
+        <div className="hidden print:block text-center mb-4"><h1 className="text-2xl font-bold">Estate Report: {selectedMonth}</h1></div>
+        <div className="bg-white rounded-lg shadow overflow-hidden print:shadow-none print:border">
+          <table className="min-w-full text-sm text-left">
+            <thead className="bg-gray-800 text-white print:bg-gray-200 print:text-black"><tr><th className="p-3">නම</th><th className="p-3 text-right">Kg</th><th className="p-3 text-right">පඩිය</th><th className="p-3 text-right">අත්ති.</th><th className="p-3 text-right">ගෙවූ</th><th className="p-3 text-right font-bold">හිඟ</th></tr></thead>
+            <tbody className="divide-y divide-gray-100">{payrollData.map(data => (
+                <tr key={data.id} className="hover:bg-purple-50 cursor-pointer" onClick={() => onSelectWorker(data)}>
+                  <td className="p-3 font-medium">{data.name}</td><td className="p-3 text-right text-gray-600">{data.totalKg.toFixed(1)}</td><td className="p-3 text-right">{data.grossPay > 0 ? formatCurrency(data.grossPay) : '-'}</td><td className="p-3 text-right text-red-500">{data.totalAdvances > 0 ? `-${data.totalAdvances}` : '-'}</td><td className="p-3 text-right text-green-600">{data.totalPaid > 0 ? `-${data.totalPaid}` : '-'}</td><td className={`p-3 text-right font-bold ${data.balanceDue <= 0 ? 'text-green-600' : 'text-red-600'}`}>{data.balanceDue <= 0 ? 'PAID' : data.balanceDue.toLocaleString()}</td>
+                </tr>))}</tbody>
+          </table>
+        </div>
+      </div>
+      <style>{`@media print { @page { size: A4; margin: 20mm; } body * { visibility: hidden; } .print\\:block, .print\\:block * { visibility: visible; } .overflow-x-auto { overflow: visible !important; } .pb-safe { display: none !important; } header { display: none !important; } }`}</style>
+    </div>
+  );
+};
+
+// --- Main App ---
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('daily');
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workers, setWorkers] = useState([]);
+  const [entries, setEntries] = useState([]);
+  const [factoryRecords, setFactoryRecords] = useState([]);
+  const [advances, setAdvances] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [bookNumbers, setBookNumbers] = useState([]);
+  const [earnings, setEarnings] = useState([]);
+  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Init Firebase Only if config is there
+  useEffect(() => {
+    if (app) {
+        signInAnonymously(auth).catch(e => console.error(e));
+        const unsub = onAuthStateChanged(auth, setUser);
+        return unsub;
+    }
+  }, []);
+
+  useEffect(() => { if (!user) return; 
+    const uW = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'workers')), s => setWorkers(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uE = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'work_entries')), s => setEntries(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uF = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'factory_records')), s => setFactoryRecords(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uA = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'advances')), s => setAdvances(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uP = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'payments')), s => setPayments(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uB = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'book_numbers')), s => setBookNumbers(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    const uEr = onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'earnings')), s => setEarnings(s.docs.map(d => ({id: d.id, ...d.data()}))));
+    return () => { uW(); uE(); uF(); uA(); uP(); uB(); uEr(); };
+  }, [user]);
+
+  const addWorker = (d) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'workers'), d);
+  const deleteWorker = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'workers', id));
+  const addEntry = (d) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'work_entries'), d);
+  const addFactoryRecord = (d) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'factory_records'), d);
+  const deleteFactoryRecord = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'factory_records', id));
+  const addAdvance = (d) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'advances'), d);
+  const deleteAdvance = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'advances', id));
+  const addPayment = (d) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'payments'), d);
+  const deletePayment = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'payments', id));
+  const addBookNumber = (name) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'book_numbers'), { name });
+  const deleteBookNumber = (id) => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'book_numbers', id));
+  const setWorkerEarnings = async (workerId, month, date, amount) => {
+    let id = date ? `${workerId}_${date}` : `${workerId}_${month}`;
+    let data = { workerId, amount, timestamp: serverTimestamp() };
+    if (date) data.date = date; else data.month = month;
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'earnings', id), data);
+  };
+
+  if (!firebaseConfig.apiKey) return <div className="flex flex-col items-center justify-center h-screen p-4 text-center"><h2 className="text-xl font-bold text-red-600 mb-2">Setup Required</h2><p>Please copy your Firebase Config into the <code>firebaseConfig</code> object in the code.</p></div>;
+  if (!user) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-green-800 text-white p-4 sticky top-0 z-50 shadow-md print:hidden"><div className="flex justify-between items-center max-w-4xl mx-auto"><div className="flex items-center gap-2"><Sprout size={28} /><h1 className="text-xl font-bold">Estate Manager</h1></div></div></header>
+      <main className="flex-1 max-w-4xl mx-auto w-full mb-20 overflow-y-auto print:mb-0">
+        {selectedWorker ? <WorkerProfile worker={selectedWorker} entries={entries} advances={advances} payments={payments} earnings={earnings} onBack={() => setSelectedWorker(null)} addPayment={addPayment} addAdvance={addAdvance} deletePayment={deletePayment} deleteAdvance={deleteAdvance} setWorkerEarnings={setWorkerEarnings} /> : 
+        (<>
+            {activeTab === 'daily' && <DailyLogTab workers={workers} entries={entries} addEntry={addEntry} date={currentDate} setDate={setCurrentDate} />}
+            {activeTab === 'workers' && <WorkersTab workers={workers} deleteWorker={deleteWorker} addWorker={addWorker} onSelectWorker={setSelectedWorker} />}
+            {activeTab === 'factory' && <FactoryTab factoryRecords={factoryRecords} addFactoryRecord={addFactoryRecord} deleteFactoryRecord={deleteFactoryRecord} bookNumbers={bookNumbers} addBookNumber={addBookNumber} deleteBookNumber={deleteBookNumber} />}
+            {activeTab === 'payroll' && <PayrollTab workers={workers} entries={entries} advances={advances} earnings={earnings} payments={payments} onSelectWorker={setSelectedWorker} />}
+        </>)}
+      </main>
+      {!selectedWorker && <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 pb-safe print:hidden"><div className="flex justify-around items-center h-16 max-w-4xl mx-auto"><NavBtn active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} icon={<ClipboardList size={24} />} label="Work Log" /><NavBtn active={activeTab === 'payroll'} onClick={() => setActiveTab('payroll')} icon={<Wallet size={24} />} label="Payroll" /><NavBtn active={activeTab === 'factory'} onClick={() => setActiveTab('factory')} icon={<Factory size={24} />} label="Factory" /><NavBtn active={activeTab === 'workers'} onClick={() => setActiveTab('workers')} icon={<Users size={24} />} label="Workers" /></div></nav>}
+    </div>
+  );
+}
+const NavBtn = ({ active, onClick, icon, label }) => (<button onClick={onClick} className={`flex flex-col items-center justify-center w-full h-full ${active ? 'text-green-600' : 'text-gray-400'}`}>{icon}<span className="text-[10px] font-medium mt-1">{label}</span></button>);
