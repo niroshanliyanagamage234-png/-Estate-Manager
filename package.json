@@ -13,6 +13,12 @@
     "eject": "react-scripts eject"
   },
   "devDependencies": {
-    "react-scripts": "latest"
+   "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "firebase": "^10.7.1",       
+    "lucide-react": "^0.309.0",  
+    "react-scripts": "5.0.1"
+  },
   }
 }
