@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Sprout, ClipboardList, Wallet, Factory, Plus, Save, Trash2, 
-  ArrowLeft, CreditCard, AlertTriangle, FileText, CheckCircle, Printer, Lock, LogIn, LogOut, ArrowDownLeft, ArrowUpRight, Home, History 
+  ArrowLeft, CreditCard, AlertTriangle, FileText, CheckCircle, Printer, Lock, LogIn, LogOut, ArrowDownLeft, ArrowUpRight, Home, History, Clock 
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -11,13 +11,13 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // --- Firebase Configuration ---
 // වැදගත්: මෙතනට ඔබේ Firebase Project එකේ Config ටික පේස්ට් කරන්න.
-const firebaseConfig = { apiKey: "AIzaSyAOA8FblPLzOWDEswPipXfzqIuvWY6ZUvA",
+const firebaseConfig = { 
+  apiKey: "AIzaSyAOA8FblPLzOWDEswPipXfzqIuvWY6ZUvA",
   authDomain: "tea-estate-app.firebaseapp.com",
   projectId: "tea-estate-app",
   storageBucket: "tea-estate-app.firebasestorage.app",
   messagingSenderId: "85406491956",
   appId: "1:85406491956:web:b551572166ded2266eb161"
-
 };
 
 // Initialize Firebase
@@ -52,7 +52,7 @@ const LoginScreen = ({ onLogin }) => {
           {error && <p className="mt-2 text-sm text-red-600 text-center">{error}</p>}
           <button type="submit" className="w-full py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-green-700 hover:bg-green-800 transition-colors">Login</button>
         </form>
-        <div className="mt-6 text-center"><p className="text-xs text-gray-400">Secure System v7.0</p></div>
+        <div className="mt-6 text-center"><p className="text-xs text-gray-400">Secure System v7.1</p></div>
       </div>
     </div>
   );
@@ -80,10 +80,10 @@ const DetailedReport = ({ worker, stats, month, onClose }) => {
       <div className="max-w-4xl mx-auto print:max-w-none">
         <div className="flex justify-between items-center mb-8 print:hidden"><h2 className="text-2xl font-bold">Report Preview</h2><button onClick={onClose} className="bg-gray-200 px-4 py-2 rounded font-bold hover:bg-gray-300">Close</button></div>
         <div className="border-b-2 border-black pb-4 mb-6"><h1 className="text-3xl font-bold uppercase mb-2">Monthly Worker Statement</h1><div className="flex justify-between text-sm"><div><p><strong>Name:</strong> {worker.name}</p><p><strong>Category:</strong> {worker.category}</p><p><strong>NIC:</strong> {worker.nic || '-'}</p></div><div className="text-right"><p><strong>Month:</strong> {month}</p><p><strong>Generated:</strong> {new Date().toLocaleDateString()}</p></div></div></div>
-        <div className="grid grid-cols-4 gap-4 mb-8 text-center"><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Gross Pay</p><p className="text-lg font-bold">{formatCurrency(stats.grossPay)}</p></div><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Net Advances</p><p className="text-lg font-bold text-red-600">-{formatCurrency(stats.netAdvances)}</p></div><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Paid Amount</p><p className="text-lg font-bold text-green-600">-{formatCurrency(stats.totalPaid)}</p></div><div className="border-2 border-black p-2 rounded bg-gray-50"><p className="text-xs uppercase font-bold text-black">Balance Due</p><p className="text-lg font-bold">{formatCurrency(stats.balanceDue)}</p></div></div>
+        <div className="grid grid-cols-4 gap-4 mb-8 text-center"><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Gross Pay</p><p className="text-lg font-bold">{formatCurrency(stats.grossPay)}</p></div><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Net Advances</p><p className="text-lg font-bold text-red-600">-{formatCurrency(stats.netAdvances)}</p></div><div className="border border-gray-300 p-2 rounded"><p className="text-xs uppercase font-bold text-gray-500">Total Deducted</p><p className="text-lg font-bold text-green-600">-{formatCurrency(stats.totalPaid)}</p></div><div className="border-2 border-black p-2 rounded bg-gray-50"><p className="text-xs uppercase font-bold text-black">Balance Due</p><p className="text-lg font-bold">{formatCurrency(stats.balanceDue)}</p></div></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Work History</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date</th><th className="text-right">Output (Kg)</th></tr></thead><tbody className="divide-y">{stats.scopeEntries.sort((a,b) => a.date.localeCompare(b.date)).map((e, i) => (<tr key={i}><td className="py-1">{e.date}</td><td className="text-right font-medium">{e.value}</td></tr>))}<tr className="border-t-2 border-gray-300 font-bold bg-gray-50"><td className="py-1">Total</td><td className="text-right">{stats.totalKg.toFixed(1)}</td></tr></tbody></table></div>
-            <div className="space-y-6"><div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Advance History</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopeAdvances.map((a, i) => (<tr key={i}><td className="py-1">{a.date}</td><td className="text-right text-red-600 font-medium">{formatCurrency(a.amount)}</td></tr>))}</tbody></table></div>{stats.scopeRepayments.length > 0 && (<div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Repayments (Returned)</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopeRepayments.map((r, i) => (<tr key={i}><td className="py-1">{r.date}</td><td className="text-right text-green-600 font-medium">{formatCurrency(r.amount)}</td></tr>))}</tbody></table></div>)}<div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Salary Payments</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopePayments.map((p, i) => (<tr key={i}><td className="py-1">{p.date}</td><td className="text-right text-green-600 font-bold">{formatCurrency(p.amount)}</td></tr>))}</tbody></table></div></div>
+            <div className="space-y-6"><div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Advance History</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date/Time</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopeAdvances.map((a, i) => (<tr key={i}><td className="py-1">{a.date} <span className="text-[10px] text-gray-500">{a.time}</span></td><td className="text-right text-red-600 font-medium">{formatCurrency(a.amount)}</td></tr>))}</tbody></table></div>{stats.scopeRepayments.length > 0 && (<div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Returns/Deductions</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date/Time</th><th>Type</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopeRepayments.map((r, i) => (<tr key={i}><td className="py-1">{r.date} <span className="text-[10px] text-gray-500">{r.time}</span></td><td className="text-[10px] uppercase">{r.type === 'salary_deduction' ? 'Salary Cut' : 'Return'}</td><td className="text-right text-green-600 font-medium">{formatCurrency(r.amount)}</td></tr>))}</tbody></table></div>)}<div><h3 className="font-bold border-b border-gray-400 mb-2 pb-1">Payments</h3><table className="w-full text-sm"><thead><tr className="text-left text-gray-500"><th>Date/Time</th><th>Type</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y">{stats.scopePayments.map((p, i) => (<tr key={i}><td className="py-1">{p.date} <span className="text-[10px] text-gray-500">{p.time}</span></td><td className="text-[10px] uppercase">{p.type === 'deduction' ? 'Adv Cut' : 'Cash'}</td><td className="text-right text-green-600 font-bold">{formatCurrency(p.amount)}</td></tr>))}</tbody></table></div></div>
         </div>
       </div>
     </div>
@@ -173,6 +173,7 @@ const WorkerProfile = ({ worker, entries, advances, repayments, payments, earnin
   const [payAmount, setPayAmount] = useState('');
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
+  const [deductAmount, setDeductAmount] = useState(''); // New State for deduction
   const [manualEarnings, setManualEarnings] = useState('');
   const [confirmData, setConfirmData] = useState({ isOpen: false, type: null, id: null });
 
@@ -192,14 +193,40 @@ const WorkerProfile = ({ worker, entries, advances, repayments, payments, earnin
     
     let totalKg = 0; sEntries.forEach(e => totalKg += parseFloat(e.value || 0));
     const netAdvances = sAdvances.reduce((sum, a) => sum + a.amount, 0) - sRepayments.reduce((sum, r) => sum + r.amount, 0);
-    const totalPaid = sPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = sPayments.reduce((sum, p) => sum + p.amount, 0); // Includes cash + deductions
     return { totalKg, grossPay: currentEarnings, totalAdvancesReturned: sRepayments.reduce((sum, r) => sum + r.amount, 0), netAdvances, totalPaid, balanceDue: currentEarnings - netAdvances - totalPaid, scopeAdvances: sAdvances, scopeRepayments: sRepayments, scopePayments: sPayments, scopeEntries: sEntries };
   }, [worker, entries, advances, repayments, payments, selectedMonth, selectedDate, viewMode, currentEarnings]);
 
   const handleSetEarnings = (e) => { e.preventDefault(); const val = parseFloat(manualEarnings); if(isNaN(val)) return; if(viewMode === 'daily') setWorkerEarnings(worker.id, null, selectedDate, val); else setWorkerEarnings(worker.id, selectedMonth, null, val); };
-  const handlePay = (e) => { e.preventDefault(); if(!payAmount) return; addPayment({ workerId: worker.id, date: selectedDate, month: selectedDate.slice(0, 7), amount: parseFloat(payAmount), timestamp: serverTimestamp() }); setPayAmount(''); };
-  const handleAddAdvance = (e) => { e.preventDefault(); if(!advanceAmount) return; addAdvance({ workerId: worker.id, date: selectedDate, amount: parseFloat(advanceAmount), timestamp: serverTimestamp() }); setAdvanceAmount(''); };
-  const handleAddRepayment = (e) => { e.preventDefault(); if(!repayAmount) return; addRepayment({ workerId: worker.id, date: selectedDate, amount: parseFloat(repayAmount), timestamp: serverTimestamp() }); setRepayAmount(''); };
+  
+  const handlePay = async (e) => { 
+      e.preventDefault();
+      const cash = parseFloat(payAmount) || 0;
+      const deduction = parseFloat(deductAmount) || 0;
+      if(cash === 0 && deduction === 0) return;
+
+      const timeStr = new Date().toLocaleTimeString('si-LK', { hour: '2-digit', minute: '2-digit' });
+      
+      // 1. Cash Payment
+      if (cash > 0) {
+          await addPayment({ workerId: worker.id, date: selectedDate, time: timeStr, month: selectedDate.slice(0, 7), amount: cash, type: 'cash', timestamp: serverTimestamp() });
+      }
+      
+      // 2. Deduction (Counts as Repayment AND Payment)
+      if (deduction > 0) {
+          // Add to Repayments (Reduces Advance Debt)
+          await addRepayment({ workerId: worker.id, date: selectedDate, time: timeStr, amount: deduction, type: 'salary_deduction', timestamp: serverTimestamp() });
+          // Add to Payments (Reduces Balance Due so it doesn't spike up)
+          await addPayment({ workerId: worker.id, date: selectedDate, time: timeStr, month: selectedDate.slice(0, 7), amount: deduction, type: 'deduction', timestamp: serverTimestamp() });
+      }
+
+      setPayAmount('');
+      setDeductAmount('');
+  };
+  
+  const handleAddAdvance = (e) => { e.preventDefault(); if(!advanceAmount) return; const timeStr = new Date().toLocaleTimeString('si-LK', { hour: '2-digit', minute: '2-digit' }); addAdvance({ workerId: worker.id, date: selectedDate, time: timeStr, amount: parseFloat(advanceAmount), timestamp: serverTimestamp() }); setAdvanceAmount(''); };
+  const handleAddRepayment = (e) => { e.preventDefault(); if(!repayAmount) return; const timeStr = new Date().toLocaleTimeString('si-LK', { hour: '2-digit', minute: '2-digit' }); addRepayment({ workerId: worker.id, date: selectedDate, time: timeStr, amount: parseFloat(repayAmount), type: 'return', timestamp: serverTimestamp() }); setRepayAmount(''); };
+  
   const requestDelete = (type, id) => setConfirmData({ isOpen: true, type, id });
   const confirmDelete = () => {
     if (confirmData.type === 'payment') deletePayment(confirmData.id);
@@ -215,24 +242,36 @@ const WorkerProfile = ({ worker, entries, advances, repayments, payments, earnin
       <ConfirmModal isOpen={confirmData.isOpen} title="තහවුරු කරන්න" message="ඔබට මෙම දත්තය මැකීමට අවශ්‍ය බව විශ්වාසද?" onConfirm={confirmDelete} onCancel={() => setConfirmData({ isOpen: false, type: null, id: null })} />
       <div className="flex items-center justify-between mb-2 border-b pb-4"><div className="flex items-center gap-4"><button onClick={onBack} className="p-2 rounded-full hover:bg-gray-100 transition"><ArrowLeft size={24} className="text-gray-600" /></button><div><h2 className="text-2xl font-bold text-gray-800">{worker.name}</h2><p className="text-sm text-gray-500">{worker.category}</p></div></div><button onClick={() => setShowReport(true)} className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 shadow-md"><Printer size={20} /></button></div>
       
-      {/* Worker Details View */}
-      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-600">
-          <p><strong>දුරකථන:</strong> {worker.phone || '-'}</p>
-          <p><strong>ලිපිනය:</strong> {worker.address || '-'}</p>
-          <p><strong>NIC:</strong> {worker.nic || '-'}</p>
-          <p><strong>උපන් දිනය:</strong> {worker.dob || '-'}</p>
-      </div>
-
+      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm text-gray-600"><p><strong>දුරකථන:</strong> {worker.phone || '-'}</p><p><strong>ලිපිනය:</strong> {worker.address || '-'}</p><p><strong>NIC:</strong> {worker.nic || '-'}</p><p><strong>උපන් දිනය:</strong> {worker.dob || '-'}</p></div>
       <div className="flex bg-gray-100 p-1 rounded-lg mb-4"><button onClick={() => setViewMode('daily')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${viewMode === 'daily' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-500'}`}>දවස (Day)</button><button onClick={() => setViewMode('monthly')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${viewMode === 'monthly' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500'}`}>මාසය (Month)</button></div>
       <div className={`p-3 rounded-lg border flex justify-between items-center transition-colors ${viewMode === 'daily' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}><span className="text-gray-700 font-medium">{viewMode === 'daily' ? 'දිනය:' : 'මාසය:'}</span>{viewMode === 'daily' ? <input type="date" value={selectedDate} onChange={(e) => { setSelectedDate(e.target.value); setSelectedMonth(e.target.value.slice(0, 7)); }} className="p-2 border rounded-lg font-bold bg-white" /> : <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="p-2 border rounded-lg font-bold bg-white" />}</div>
       
       <div className="grid grid-cols-2 gap-3"><div className="bg-blue-50 p-3 rounded-xl border border-blue-100"><p className="text-xs text-blue-600 font-bold uppercase">වැඩ (Work)</p><p className="text-lg font-bold text-gray-800">{stats.totalKg.toFixed(1)} <span className="text-sm text-gray-500">Kg</span></p></div><div className="bg-yellow-50 p-3 rounded-xl border border-yellow-200"><p className="text-xs text-yellow-700 font-bold uppercase">මුළු පඩිය (Gross)</p><form onSubmit={handleSetEarnings} className="flex gap-1 mt-1"><input type="number" value={manualEarnings} onChange={(e) => setManualEarnings(e.target.value)} className="w-full p-1 text-sm border border-yellow-300 rounded font-bold bg-white outline-none" placeholder="0.00" /><button type="submit" className="bg-yellow-500 text-white px-2 rounded"><Save size={14} /></button></form></div></div>
       <div className="grid grid-cols-2 gap-3"><div className="bg-red-50 p-3 rounded-xl border border-red-100"><p className="text-xs text-red-600 font-bold uppercase">අත්තිකාරම් (Net)</p><div className="flex items-baseline gap-1"><p className="text-xl font-bold text-red-700">-{formatCurrency(stats.netAdvances)}</p></div>{stats.totalAdvancesReturned > 0 && <p className="text-[10px] text-green-600 mt-1">පියවූ: +{formatCurrency(stats.totalAdvancesReturned)}</p>}</div><div className="bg-green-50 p-3 rounded-xl border border-green-100"><p className="text-xs text-green-600 font-bold uppercase">ගෙවූ මුදල්</p><p className="text-xl font-bold text-green-700">-{formatCurrency(stats.totalPaid)}</p></div></div>
       <div className={`p-6 rounded-xl border-2 text-center transition-colors ${stats.balanceDue <= 0 ? 'bg-green-100 border-green-300' : 'bg-white border-red-300'}`}><p className="text-sm text-gray-600 font-bold mb-1">{stats.balanceDue <= 0 ? 'ගෙවා අවසන්' : 'හිඟ මුදල'}</p>{stats.balanceDue <= 0 ? <div className="flex items-center justify-center gap-2 text-green-700"><CheckCircle size={32} /><span className="text-2xl font-bold">PAID</span></div> : <p className="text-3xl font-extrabold text-red-600">{formatCurrency(stats.balanceDue)}</p>}</div>
-      <div className="space-y-4"><div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200"><h3 className="font-bold text-gray-700 mb-2 text-sm flex items-center gap-2"><Wallet size={16} /> අත්තිකාරම් කළමනාකරණය</h3><div className="grid grid-cols-2 gap-3"><form onSubmit={handleAddAdvance}><label className="text-[10px] text-gray-500 uppercase font-bold">ගන්නා (Take)</label><div className="flex gap-1 mt-1"><input type="number" placeholder="Rs" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className="w-full p-2 border border-red-200 rounded text-sm outline-none" /><button type="submit" className="bg-red-500 text-white px-3 rounded"><ArrowDownLeft size={16}/></button></div></form><form onSubmit={handleAddRepayment}><label className="text-[10px] text-gray-500 uppercase font-bold">පියවන (Return)</label><div className="flex gap-1 mt-1"><input type="number" placeholder="Rs" value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} className="w-full p-2 border border-green-200 rounded text-sm outline-none" /><button type="submit" className="bg-green-500 text-white px-3 rounded"><ArrowUpRight size={16}/></button></div></form></div></div><div className="bg-white p-4 rounded-xl shadow-sm border border-green-200"><h3 className="font-bold text-green-800 mb-2 text-sm flex items-center gap-2"><CreditCard size={16} /> පඩි ගෙවීම (Salary Payment)</h3><form onSubmit={handlePay} className="flex gap-2"><input type="number" placeholder="මුදල (Rs)" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="flex-1 p-2 border rounded outline-none" /><button type="submit" className="bg-green-700 text-white px-4 rounded font-bold text-sm hover:bg-green-800">Pay</button></form></div></div>
+      
+      <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-green-200">
+              <h3 className="font-bold text-green-800 mb-2 text-sm flex items-center gap-2"><CreditCard size={16} /> පඩි ගෙවීම (Payment & Deduction)</h3>
+              <form onSubmit={handlePay} className="space-y-3">
+                  <div><label className="text-[10px] text-gray-500 font-bold uppercase">අතට දෙන මුදල (Cash Payment)</label><input type="number" placeholder="Rs" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="w-full p-2 border border-green-300 rounded outline-none font-bold" /></div>
+                  <div><label className="text-[10px] text-red-500 font-bold uppercase">අත්තිකාරම් අඩු කිරීම (Deduct Advance)</label><input type="number" placeholder="Rs" value={deductAmount} onChange={(e) => setDeductAmount(e.target.value)} className="w-full p-2 border border-red-300 rounded outline-none font-bold text-red-600" /></div>
+                  <button type="submit" className="w-full bg-green-700 text-white py-2 rounded font-bold text-sm hover:bg-green-800">Confirm Pay</button>
+              </form>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="font-bold text-gray-700 mb-2 text-sm flex items-center gap-2"><Wallet size={16} /> අත්තිකාරම් කළමනාකරණය</h3>
+            <div className="grid grid-cols-2 gap-3">
+                <form onSubmit={handleAddAdvance}><label className="text-[10px] text-gray-500 uppercase font-bold">ගන්නා (Take)</label><div className="flex gap-1 mt-1"><input type="number" placeholder="Rs" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} className="w-full p-2 border border-red-200 rounded text-sm outline-none" /><button type="submit" className="bg-red-500 text-white px-3 rounded"><ArrowDownLeft size={16}/></button></div></form>
+                <form onSubmit={handleAddRepayment}><label className="text-[10px] text-gray-500 uppercase font-bold">පියවන (Return)</label><div className="flex gap-1 mt-1"><input type="number" placeholder="Rs" value={repayAmount} onChange={(e) => setRepayAmount(e.target.value)} className="w-full p-2 border border-green-200 rounded text-sm outline-none" /><button type="submit" className="bg-green-500 text-white px-3 rounded"><ArrowUpRight size={16}/></button></div></form>
+            </div>
+          </div>
+      </div>
+
       <div className="space-y-4 mt-2">
-        {stats.scopeAdvances.length > 0 && (<div className="bg-gray-50 rounded-lg p-3 border border-gray-200"><h4 className="text-xs font-bold text-gray-500 uppercase mb-2">ගත්ත අත්තිකාරම්</h4>{stats.scopeAdvances.map(a => (<div key={a.id} className="flex justify-between text-sm py-1 border-b border-gray-200 last:border-0"><span>{a.date}</span><div className="flex items-center gap-2"><span className="text-red-600 font-bold">{formatCurrency(a.amount)}</span><button onClick={() => requestDelete('advance', a.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button></div></div>))}</div>)}
-        {stats.scopeRepayments.length > 0 && (<div className="bg-green-50 rounded-lg p-3 border border-green-100"><h4 className="text-xs font-bold text-green-700 uppercase mb-2">ආපසු ගෙවීම් (Returns)</h4>{stats.scopeRepayments.map(r => (<div key={r.id} className="flex justify-between text-sm py-1 border-b border-green-200 last:border-0"><span>{r.date}</span><div className="flex items-center gap-2"><span className="text-green-700 font-bold">{formatCurrency(r.amount)}</span><button onClick={() => requestDelete('repayment', r.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button></div></div>))}</div>)}
+        {stats.scopePayments.length > 0 && (<div className="bg-green-50 rounded-lg p-3 border border-green-100"><h4 className="text-xs font-bold text-green-700 uppercase mb-2">ගෙවීම් ඉතිහාසය (Payments)</h4>{stats.scopePayments.map(p => (<div key={p.id} className="flex justify-between text-sm py-1 border-b border-green-200 last:border-0"><span>{p.date} <span className="text-[10px] text-gray-500">{p.time}</span></span><div className="flex items-center gap-2"><span className={`font-bold ${p.type === 'deduction' ? 'text-orange-600' : 'text-green-700'}`}>{p.type === 'deduction' ? 'Adv Cut' : 'Cash'}: {formatCurrency(p.amount)}</span><button onClick={() => requestDelete('payment', p.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button></div></div>))}</div>)}
+        {stats.scopeAdvances.length > 0 && (<div className="bg-gray-50 rounded-lg p-3 border border-gray-200"><h4 className="text-xs font-bold text-gray-500 uppercase mb-2">ගත්ත අත්තිකාරම්</h4>{stats.scopeAdvances.map(a => (<div key={a.id} className="flex justify-between text-sm py-1 border-b border-gray-200 last:border-0"><span>{a.date} <span className="text-[10px] text-gray-500">{a.time}</span></span><div className="flex items-center gap-2"><span className="text-red-600 font-bold">{formatCurrency(a.amount)}</span><button onClick={() => requestDelete('advance', a.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button></div></div>))}</div>)}
       </div>
     </div>
   );
